@@ -1,0 +1,42 @@
+{
+  "name": "ev-cli",
+  "version": "0.1.0",
+  "description": "English vocabulary CLI for Chinese speakers — SM-2 spaced repetition in the terminal",
+  "type": "module",
+  "bin": {
+    "ev-cli": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "data"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "english",
+    "vocabulary",
+    "cli",
+    "srs",
+    "spaced-repetition"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^1.4.0",
+    "commander": "^14.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  }
+}
