@@ -44,17 +44,16 @@ export async function runLearnSession(
   }
 
   for (const word of newWords) {
-    for (const direction of ['en2cn', 'cn2en'] as const) {
-      const result = await reviewOne(null, word, direction)
-      if (result === 'cancel') break
+    const direction = 'en2cn' as const
+    const result = await reviewOne(null, word, direction)
+    if (result === 'cancel') break
 
-      const card = createCard(word.word, direction)
-      const updated = reviewCard(card, result.rating)
-      progress.cards.push(updated)
-      progress.history.push({ word: word.word, direction, rating: result.rating, timestamp: new Date().toISOString() })
-      reviewed++
-      if (result.rating !== 'again') correct++
-    }
+    const card = createCard(word.word, direction)
+    const updated = reviewCard(card, result.rating)
+    progress.cards.push(updated)
+    progress.history.push({ word: word.word, direction, rating: result.rating, timestamp: new Date().toISOString() })
+    reviewed++
+    if (result.rating !== 'again') correct++
   }
 
   console.log(formatSessionSummary(reviewed, correct))
