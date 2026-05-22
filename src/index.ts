@@ -1,8 +1,3 @@
-import { program } from 'commander'
+import { createProgram } from './commands/index.js'
 
-program
-  .name('ev-cli')
-  .description('English vocabulary CLI — learn words with spaced repetition')
-  .version('0.1.0')
-
-program.parse()
+createProgram().parse()
