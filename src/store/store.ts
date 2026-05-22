@@ -111,7 +111,10 @@ export function syncBackup(config: Config): void {
     fs.mkdirSync(backupDir, { recursive: true })
     for (const { src, name } of files) {
       if (fs.existsSync(src)) {
-        fs.copyFileSync(src, path.join(backupDir, name))
+        const dest = path.join(backupDir, name)
+        fs.copyFileSync(src, dest)
+        const mtime = fs.statSync(src).mtime
+        fs.utimesSync(dest, mtime, mtime)
       }
     }
   } catch (e) {

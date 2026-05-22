@@ -221,6 +221,8 @@ export function createProgram(): Command {
         const dest = direction === 'push' ? r.backupPath : r.local
         if (fs.existsSync(src)) {
           fs.copyFileSync(src, dest)
+          const mtime = fs.statSync(src).mtime
+          fs.utimesSync(dest, mtime, mtime)
           console.log(`  ✅ ${r.name} 已同步`)
         }
       }
