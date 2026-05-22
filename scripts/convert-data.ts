@@ -1,22 +1,23 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const PACK_MAP: Record<string, string> = {
-  '初中': 'junior',
-  '高中': 'senior',
-  '四级': 'cet4',
-  '六级': 'cet6',
-  '考研': 'postgrad',
-  '托福': 'toefl',
-  'SAT': 'sat',
+const PACK_MAP: Record<string, { prefix: string; name: string }> = {
+  junior: { prefix: 'ChuZhong', name: '初中' },
+  senior: { prefix: 'GaoZhong', name: '高中' },
+  cet4: { prefix: 'CET4', name: '四级 (CET-4)' },
+  cet6: { prefix: 'CET6', name: '六级 (CET-6)' },
+  postgrad: { prefix: 'KaoYan', name: '考研' },
+  toefl: { prefix: 'TOEFL', name: '托福 (TOEFL)' },
+  sat: { prefix: 'SAT', name: 'SAT' },
 }
 
 interface UpstreamWord {
   word: string
+  us?: string
+  uk?: string
   translations: { translation: string; type: string }[]
   phrases?: { phrase: string; translation: string }[]
   sentences?: { sentence: string; translation: string }[]
-  phonetic?: { us: string; uk: string }
 }
 
 interface InternalWord {
@@ -30,25 +31,33 @@ interface InternalWord {
 function convert(inputDir: string, outputDir: string): void {
   fs.mkdirSync(outputDir, { recursive: true })
 
-  for (const [chineseName, packId] of Object.entries(PACK_MAP)) {
-    const inputFile = path.join(inputDir, `${chineseName}.json`)
-    if (!fs.existsSync(inputFile)) {
-      console.log(`⏭️  跳过 ${chineseName}: 文件不存在`)
+  for (const [packId, { prefix, name }] of Object.entries(PACK_MAP)) {
+    const files = fs.readdirSync(inputDir)
+      .filter(f => f.startsWith(prefix + '_') && f.endsWith('.json'))
+      .sort()
+
+    if (files.length === 0) {
+      console.log(`⏭️  跳过 ${name}: 文件不存在`)
       continue
     }
 
-    const raw: UpstreamWord[] = JSON.parse(fs.readFileSync(inputFile, 'utf-8'))
-    const converted: InternalWord[] = raw.map(w => ({
-      word: w.word,
-      definition: w.translations.map(t => `${t.type} ${t.translation}`).join('；'),
-      pos: w.translations.map(t => t.type).join('/'),
-      example: w.sentences?.[0]?.sentence,
-      ipa: w.phonetic?.us,
-    }))
+    const converted: InternalWord[] = []
+    for (const file of files) {
+      const raw: UpstreamWord[] = JSON.parse(fs.readFileSync(path.join(inputDir, file), 'utf-8'))
+      for (const w of raw) {
+        converted.push({
+          word: w.word,
+          definition: w.translations.map(t => `${t.type} ${t.translation}`).join('；'),
+          pos: w.translations.map(t => t.type).join('/'),
+          example: w.sentences?.[0]?.sentence,
+          ipa: w.us,
+        })
+      }
+    }
 
     const outputFile = path.join(outputDir, `${packId}.json`)
     fs.writeFileSync(outputFile, JSON.stringify(converted, null, 2) + '\n')
-    console.log(`✅ ${chineseName} → ${packId}.json (${converted.length} 词)`)
+    console.log(`✅ ${name} → ${packId}.json (${converted.length} 词)`)
   }
 }
 
