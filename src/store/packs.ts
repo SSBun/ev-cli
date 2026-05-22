@@ -4,7 +4,10 @@ import { fileURLToPath } from 'node:url'
 import type { WordEntry, WordPack } from '../types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const DATA_DIR = path.resolve(__dirname, '../../data')
+// From src/store → ../../data, from dist → ../data
+const DATA_DIR = fs.existsSync(path.resolve(__dirname, '../../data'))
+  ? path.resolve(__dirname, '../../data')
+  : path.resolve(__dirname, '../data')
 
 const PACK_META: Record<string, string> = {
   junior: '初中',
