@@ -66,9 +66,9 @@ async function reviewOne(
   direction?: 'en2cn' | 'cn2en',
 ): Promise<{ rating: Rating } | 'cancel'> {
   const dir = direction ?? card!.direction
-  console.log('\n' + formatWordFront(entry, dir))
+  clack.note(formatWordFront(entry, dir))
 
-  const reveal = await clack.confirm({ message: '显示答案?' })
+  const reveal = await clack.text({ message: '按回车显示答案', placeholder: '' })
   if (clack.isCancel(reveal)) return 'cancel'
 
   console.log(formatWordBack(entry, dir))
