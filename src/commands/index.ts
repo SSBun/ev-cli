@@ -1,6 +1,7 @@
 import { Command } from 'commander'
 import * as clack from '@clack/prompts'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { loadConfig, saveConfig, loadProgress, saveProgress, loadCustomWords, saveCustomWords, syncBackup, getSyncFiles, getBackupDir, compareFileSync } from '../store/store.js'
 import { loadPack, listPacks } from '../store/packs.js'
@@ -25,12 +26,14 @@ export function createProgram(): Command {
     .option('--new-per-day <n>', 'Set new words per day', parseInt)
     .option('--review-limit <n>', 'Set max reviews per session', parseInt)
     .option('--backup-dir <path>', 'Set backup directory')
+    .option('--backup-icloud', 'Set backup directory to iCloud Drive')
     .action((opts) => {
       const config = loadConfig()
-      if (opts.pack || opts.newPerDay || opts.reviewLimit || opts.backupDir) {
+      if (opts.pack || opts.newPerDay || opts.reviewLimit || opts.backupDir || opts.backupIcloud) {
         if (opts.pack) config.activePack = opts.pack
         if (opts.newPerDay) config.newPerDay = opts.newPerDay
         if (opts.reviewLimit) config.reviewLimit = opts.reviewLimit
+        if (opts.backupIcloud) config.backupDir = path.join(os.homedir(), 'Library/Mobile Documents/com~apple~CloudDocs')
         if (opts.backupDir) config.backupDir = opts.backupDir
         saveConfig(config)
         console.log('✅ 配置已更新')
