@@ -1,6 +1,8 @@
 import { Command } from 'commander'
 import * as clack from '@clack/prompts'
-import { loadConfig, saveConfig, loadProgress, saveProgress, loadCustomWords, saveCustomWords, syncBackup } from '../store/store.js'
+import fs from 'node:fs'
+import path from 'node:path'
+import { loadConfig, saveConfig, loadProgress, saveProgress, loadCustomWords, saveCustomWords, syncBackup, getSyncFiles, getBackupDir, compareFileSync } from '../store/store.js'
 import { loadPack, listPacks } from '../store/packs.js'
 import { parseImportFile } from '../store/import.js'
 import { runLearnSession } from '../prompts/review.js'
@@ -157,6 +159,72 @@ export function createProgram(): Command {
         : 0
 
       console.log(formatStats({ reviewedToday, streak, retentionRate, totalWords, matureWords }))
+    })
+
+  program
+    .command('sync')
+    .description('Sync data files with backup directory')
+    .action(async () => {
+      const config = loadConfig()
+      if (!config.backupDir) {
+        console.log('⚠️ 备份目录未设置，请先运行: ev-cli config --backup-dir <path>')
+        return
+      }
+
+      const backupDir = getBackupDir(config)!
+      const files = getSyncFiles()
+
+      const statusMap: Record<string, { label: string; icon: string }> = {
+        local_newer: { label: '本地更新', icon: '📤' },
+        backup_newer: { label: '备份更新', icon: '📥' },
+        same: { label: '相同', icon: '✅' },
+        local_only: { label: '仅本地', icon: '📤' },
+        backup_only: { label: '仅备份', icon: '📥' },
+        neither: { label: '不存在', icon: '⬜' },
+      }
+
+      const results = files.map(f => {
+        const backupPath = path.join(backupDir, f.name)
+        const status = compareFileSync(f.name, f.local, backupPath)
+        return { ...f, backupPath, status }
+      })
+
+      console.log('\n文件同步状态:')
+      for (const r of results) {
+        const s = statusMap[r.status]
+        console.log(`  ${s.icon} ${r.name.padEnd(16)} ${s.label}`)
+      }
+
+      const needsSync = results.some(r => r.status !== 'same' && r.status !== 'neither')
+      if (!needsSync) {
+        console.log('\n所有文件已同步，无需操作。')
+        return
+      }
+
+      const direction = await clack.select<{ value: string; label: string }[], string>({
+        message: '选择同步方向:',
+        options: [
+          { value: 'push', label: '📤 推送到备份 (本地 → 备份)' },
+          { value: 'pull', label: '📥 从备份拉取 (备份 → 本地)' },
+          { value: 'cancel', label: '❌ 取消' },
+        ],
+      })
+      if (clack.isCancel(direction) || direction === 'cancel') {
+        clack.cancel('已取消')
+        return
+      }
+
+      fs.mkdirSync(backupDir, { recursive: true })
+      for (const r of results) {
+        if (r.status === 'neither') continue
+        const src = direction === 'push' ? r.local : r.backupPath
+        const dest = direction === 'push' ? r.backupPath : r.local
+        if (fs.existsSync(src)) {
+          fs.copyFileSync(src, dest)
+          console.log(`  ✅ ${r.name} 已同步`)
+        }
+      }
+      console.log('\n🎉 同步完成！')
     })
 
   return program

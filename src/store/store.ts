@@ -71,6 +71,32 @@ export function saveCustomWords(words: WordEntry[]): void {
   fs.writeFileSync(customPackPath(), JSON.stringify(words, null, 2) + '\n')
 }
 
+export function getSyncFiles(): { name: string; local: string }[] {
+  return [
+    { name: 'progress.json', local: progressPath() },
+    { name: 'config.json', local: configPath() },
+    { name: 'custom.json', local: customPackPath() },
+  ]
+}
+
+export function getBackupDir(config: Config): string | undefined {
+  return config.backupDir ? path.join(config.backupDir, 'ev-cli') : undefined
+}
+
+export type SyncStatus = 'local_newer' | 'backup_newer' | 'same' | 'local_only' | 'backup_only' | 'neither'
+
+export function compareFileSync(name: string, localPath: string, backupPath: string): SyncStatus {
+  const localExists = fs.existsSync(localPath)
+  const backupExists = fs.existsSync(backupPath)
+  if (!localExists && !backupExists) return 'neither'
+  if (localExists && !backupExists) return 'local_only'
+  if (!localExists && backupExists) return 'backup_only'
+  const localMtime = fs.statSync(localPath).mtimeMs
+  const backupMtime = fs.statSync(backupPath).mtimeMs
+  if (Math.abs(localMtime - backupMtime) < 1000) return 'same'
+  return localMtime > backupMtime ? 'local_newer' : 'backup_newer'
+}
+
 export function syncBackup(config: Config): void {
   if (!config.backupDir) return
 
