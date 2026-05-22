@@ -77,10 +77,10 @@ async function reviewOne(
   const rating = await clack.select<{ value: Rating; label: string }[], Rating>({
     message: '评价:',
     options: [
-      { value: 'again', label: '🔴 重来 (Again)' },
-      { value: 'hard', label: '🟡 困难 (Hard)' },
       { value: 'good', label: '🟢 记住了 (Good)' },
+      { value: 'hard', label: '🟡 困难 (Hard)' },
       { value: 'easy', label: '🔵 太简单 (Easy)' },
+      { value: 'again', label: '🔴 重来 (Again)' },
     ],
   })
   if (clack.isCancel(rating)) return 'cancel'
