@@ -24,11 +24,13 @@ export interface Config {
   activePack: string
   newPerDay: number
   reviewLimit: number
+  backupDir?: string
 }
 
 export interface Progress {
   cards: Card[]
   history: ReviewRecord[]
+  lastModified?: string
 }
 
 export interface ReviewRecord {

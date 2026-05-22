@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import * as clack from '@clack/prompts'
-import { loadConfig, saveConfig, loadProgress, saveProgress, loadCustomWords, saveCustomWords } from '../store/store.js'
+import { loadConfig, saveConfig, loadProgress, saveProgress, loadCustomWords, saveCustomWords, syncBackup } from '../store/store.js'
 import { loadPack, listPacks } from '../store/packs.js'
 import { parseImportFile } from '../store/import.js'
 import { runLearnSession } from '../prompts/review.js'
@@ -22,12 +22,14 @@ export function createProgram(): Command {
     .option('--pack <id>', 'Set active word pack')
     .option('--new-per-day <n>', 'Set new words per day', parseInt)
     .option('--review-limit <n>', 'Set max reviews per session', parseInt)
+    .option('--backup-dir <path>', 'Set backup directory')
     .action((opts) => {
       const config = loadConfig()
-      if (opts.pack || opts.newPerDay || opts.reviewLimit) {
+      if (opts.pack || opts.newPerDay || opts.reviewLimit || opts.backupDir) {
         if (opts.pack) config.activePack = opts.pack
         if (opts.newPerDay) config.newPerDay = opts.newPerDay
         if (opts.reviewLimit) config.reviewLimit = opts.reviewLimit
+        if (opts.backupDir) config.backupDir = opts.backupDir
         saveConfig(config)
         console.log('✅ 配置已更新')
       }
@@ -35,6 +37,7 @@ export function createProgram(): Command {
       console.log(`  词库: ${config.activePack}`)
       console.log(`  每日新词: ${config.newPerDay}`)
       console.log(`  复习上限: ${config.reviewLimit}`)
+      console.log(`  备份目录: ${config.backupDir || '未设置'}`)
     })
 
   program
@@ -112,6 +115,7 @@ export function createProgram(): Command {
         allWords, progress, config.newPerDay, config.reviewLimit,
       )
       saveProgress(updated)
+      syncBackup(config)
     })
 
   program

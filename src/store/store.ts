@@ -54,6 +54,7 @@ export function loadProgress(): Progress {
 
 export function saveProgress(progress: Progress): void {
   ensureDataDir()
+  progress.lastModified = new Date().toISOString()
   fs.writeFileSync(progressPath(), JSON.stringify(progress, null, 2) + '\n')
 }
 
@@ -68,4 +69,26 @@ export function loadCustomWords(): WordEntry[] {
 export function saveCustomWords(words: WordEntry[]): void {
   ensureDataDir()
   fs.writeFileSync(customPackPath(), JSON.stringify(words, null, 2) + '\n')
+}
+
+export function syncBackup(config: Config): void {
+  if (!config.backupDir) return
+
+  const backupDir = path.join(config.backupDir, 'ev-cli')
+  const files = [
+    { src: progressPath(), name: 'progress.json' },
+    { src: configPath(), name: 'config.json' },
+    { src: customPackPath(), name: 'custom.json' },
+  ]
+
+  try {
+    fs.mkdirSync(backupDir, { recursive: true })
+    for (const { src, name } of files) {
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, path.join(backupDir, name))
+      }
+    }
+  } catch (e) {
+    console.warn(`⚠️ 备份失败: ${(e as Error).message}`)
+  }
 }
